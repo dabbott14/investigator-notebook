@@ -1,0 +1,140 @@
+'==========================================================================
+' Code for the UserForm named frmRemoveAccounts.
+'
+' The form starts empty: this code adds the lists and buttons itself when
+' the form opens, so there is nothing to draw in the form designer.
+'
+'   Left list:  account tabs in the notebook. Double-click to select.
+'   Right list: accounts to delete. Double-click to put one back.
+'   Delete Accounts: asks for confirmation, then removes them.
+'==========================================================================
+Option Explicit
+
+Private WithEvents lstAvailable As MSForms.ListBox
+Private WithEvents lstToDelete As MSForms.ListBox
+Private WithEvents btnDelete As MSForms.CommandButton
+Private WithEvents btnCancel As MSForms.CommandButton
+
+
+Private Sub UserForm_Initialize()
+    Dim accts As Variant
+    Dim i As Long
+
+    Me.Caption = "Remove Accounts"
+    Me.Width = 430
+    Me.Height = 330
+
+    AddLabel "lblAvailable", "ACCOUNT TABS (double-click to select)", 12
+    AddLabel "lblToDelete", "ACCOUNTS TO DELETE (double-click to undo)", 222
+
+    Set lstAvailable = Me.Controls.Add("Forms.ListBox.1", "lstAvailable")
+    PlaceList lstAvailable, 12
+
+    Set lstToDelete = Me.Controls.Add("Forms.ListBox.1", "lstToDelete")
+    PlaceList lstToDelete, 222
+
+    Set btnDelete = Me.Controls.Add("Forms.CommandButton.1", "btnDelete")
+    With btnDelete
+        .Caption = "Delete Accounts"
+        .Left = 222
+        .Top = 258
+        .Width = 110
+        .Height = 26
+        .BackColor = RGB(192, 0, 0)
+        .ForeColor = RGB(255, 255, 255)
+        .Font.Bold = True
+    End With
+
+    Set btnCancel = Me.Controls.Add("Forms.CommandButton.1", "btnCancel")
+    With btnCancel
+        .Caption = "Cancel"
+        .Left = 340
+        .Top = 258
+        .Width = 70
+        .Height = 26
+        .Cancel = True              ' Esc closes the form
+    End With
+
+    accts = modNotebook.GetAccountList()
+    If IsArray(accts) Then
+        For i = LBound(accts) To UBound(accts)
+            lstAvailable.AddItem CStr(accts(i))
+        Next i
+    End If
+End Sub
+
+
+' ---- Moving accounts between the lists ---------------------------------
+Private Sub lstAvailable_DblClick(ByVal Cancel As MSForms.ReturnBoolean)
+    MoveSelected lstAvailable, lstToDelete
+End Sub
+
+Private Sub lstToDelete_DblClick(ByVal Cancel As MSForms.ReturnBoolean)
+    MoveSelected lstToDelete, lstAvailable
+End Sub
+
+Private Sub MoveSelected(ByVal fromList As MSForms.ListBox, ByVal toList As MSForms.ListBox)
+    If fromList.ListIndex < 0 Then Exit Sub
+    toList.AddItem fromList.List(fromList.ListIndex)
+    fromList.RemoveItem fromList.ListIndex
+End Sub
+
+
+' ---- Buttons ------------------------------------------------------------
+Private Sub btnDelete_Click()
+    Dim accts() As String
+    Dim msg As String
+    Dim i As Long
+    Dim nRemoved As Long
+
+    If lstToDelete.ListCount = 0 Then
+        MsgBox "Double-click an account on the left to add it to the delete list.", _
+               vbInformation, "Remove Accounts"
+        Exit Sub
+    End If
+
+    ReDim accts(0 To lstToDelete.ListCount - 1)
+    For i = 0 To lstToDelete.ListCount - 1
+        accts(i) = lstToDelete.List(i)
+        msg = msg & vbCrLf & "   " & accts(i)
+    Next i
+
+    If MsgBox("Permanently delete these account tabs and remove them from the HOME list?" & _
+              vbCrLf & msg & vbCrLf & vbCrLf & "This cannot be undone.", _
+              vbYesNo + vbExclamation + vbDefaultButton2, "Remove Accounts") <> vbYes Then
+        Exit Sub
+    End If
+
+    Me.Hide
+    nRemoved = modNotebook.RemoveAccounts(accts)
+    MsgBox nRemoved & " account(s) removed.", vbInformation, "Remove Accounts"
+    Unload Me
+End Sub
+
+Private Sub btnCancel_Click()
+    Unload Me
+End Sub
+
+
+' ---- Layout helpers -----------------------------------------------------
+Private Sub AddLabel(ByVal controlName As String, ByVal labelText As String, ByVal leftPos As Single)
+    Dim lbl As MSForms.Label
+    Set lbl = Me.Controls.Add("Forms.Label.1", controlName)
+    With lbl
+        .Caption = labelText
+        .Left = leftPos
+        .Top = 10
+        .Width = 195
+        .Height = 14
+        .Font.Bold = True
+    End With
+End Sub
+
+Private Sub PlaceList(ByVal lst As MSForms.ListBox, ByVal leftPos As Single)
+    With lst
+        .Left = leftPos
+        .Top = 28
+        .Width = 195
+        .Height = 220
+    End With
+End Sub

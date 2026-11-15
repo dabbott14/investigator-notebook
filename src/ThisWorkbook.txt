@@ -1,0 +1,37 @@
+'==========================================================================
+' Paste this code into the ThisWorkbook module (not a regular module).
+'
+' It makes the summary placeholder on each account tab behave like
+' "background" text: it disappears when the user clicks into the summary
+' area, and comes back if the user leaves the area empty.
+'==========================================================================
+Option Explicit
+
+Private Sub Workbook_SheetSelectionChange(ByVal Sh As Object, ByVal Target As Range)
+    Dim ws As Worksheet
+    Dim firstCell As Range
+
+    If TypeName(Sh) <> "Worksheet" Then Exit Sub
+    Set ws = Sh
+
+    On Error GoTo Done
+    If Not modNotebook.IsAccountSheet(ws) Then GoTo Done
+    Application.EnableEvents = False
+
+    Set firstCell = ws.Range(modNotebook.SUMMARY_RANGE).Cells(1, 1)
+
+    If Not Intersect(Target, ws.Range(modNotebook.SUMMARY_RANGE)) Is Nothing Then
+        ' Clicked into the summary area: clear the placeholder
+        If CStr(firstCell.Value) = modNotebook.SUMMARY_PLACEHOLDER Then
+            modNotebook.ClearPlaceholder ws
+        End If
+    Else
+        ' Clicked elsewhere: restore the placeholder if nothing was typed
+        If Len(Trim$(CStr(firstCell.Value))) = 0 Then
+            modNotebook.ShowPlaceholder ws
+        End If
+    End If
+
+Done:
+    Application.EnableEvents = True
+End Sub
