@@ -59,7 +59,7 @@ case on one screen.
 
 ## Using it
 
-1. Paste up to 25 account numbers into **E2:E26** on the HOME tab.
+1. Paste or type up to 25 account numbers into **E2:E26** on the HOME tab.
 2. Click **PROCESS ACCOUNT NUMBERS**.
 3. Use the **Go to tab** links to open each account, fill in the ACCOUNT
    INFO block, and write the activity summary.
